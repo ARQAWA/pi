@@ -115,7 +115,29 @@ export function createToolSearchDocument(
 	return { name: tool.name, text: parts.filter((part) => part.trim()).join(" ") };
 }
 
-/** Okapi BM25 with the usual parameters. Ties keep document order. */
+/** Lenient tool name form: characters outside `[A-Za-z0-9_$]` become `_`, as in codemode identifiers. */
+function normalizeToolName(name: string): string {
+	return name.trim().replace(/[^A-Za-z0-9_$]/g, "_");
+}
+
+/**
+ * Whether the query names the tool: its full name, or the part after the last `__`, so
+ * `thread_read` names `mcp__app__thread_read`. Codemode identifier forms count as the same name.
+ */
+function isExactNameMatch(query: string, name: string): boolean {
+	const normalizedQuery = normalizeToolName(query);
+	if (!normalizedQuery) return false;
+	const normalizedName = normalizeToolName(name);
+	const separator = normalizedName.lastIndexOf("__");
+	return (
+		normalizedQuery === normalizedName || (separator >= 0 && normalizedQuery === normalizedName.slice(separator + 2))
+	);
+}
+
+/**
+ * Okapi BM25 with the usual parameters. Tools the query names exactly rank first. Ties keep
+ * document order.
+ */
 export class Bm25Ranker implements ToolRanker {
 	private readonly k1: number;
 	private readonly b: number;
@@ -152,7 +174,10 @@ export class Bm25Ranker implements ToolRanker {
 			}
 			if (score > 0) matches.push({ name: document.name, score });
 		});
-		return matches.sort((a, b) => b.score - a.score).slice(0, limit);
+		const exact = matches.filter((match) => isExactNameMatch(query, match.name));
+		const rest = matches.filter((match) => !isExactNameMatch(query, match.name));
+		const byScore = (a: ToolSearchMatch, b: ToolSearchMatch) => b.score - a.score;
+		return [...exact.sort(byScore), ...rest.sort(byScore)].slice(0, limit);
 	}
 }
 

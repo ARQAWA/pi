@@ -45,6 +45,24 @@ describe("Bm25Ranker", () => {
 		expect(ranker.rank("closed", documents, 8).map((match) => match.name)).toEqual(["mcp__github__list_issues"]);
 	});
 
+	it("ranks a tool first when the query is its exact name", () => {
+		const exactDocuments = [
+			tool("mcp__app__queue_read", "Read a queued message of this thread."),
+			tool(
+				"mcp__app__thread_read",
+				"Read durable state and a paginated timeline from any thread. The default view returns user messages, assistant messages and plans. Continue with afterPosition until hasMore is false.",
+			),
+		].map((entry) => createToolSearchDocument(entry));
+		const ranker = new Bm25Ranker();
+		for (const query of ["thread_read", "mcp__app__thread_read"]) {
+			expect(ranker.rank(query, exactDocuments, 1).map((match) => match.name)).toEqual(["mcp__app__thread_read"]);
+		}
+		expect(ranker.rank("read thread", exactDocuments, 2).map((match) => match.name)).toEqual([
+			"mcp__app__queue_read",
+			"mcp__app__thread_read",
+		]);
+	});
+
 	it("returns nothing for unknown or empty queries", () => {
 		const ranker = new Bm25Ranker();
 		expect(ranker.rank("kubernetes", documents, 8)).toEqual([]);
