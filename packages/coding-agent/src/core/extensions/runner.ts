@@ -27,6 +27,7 @@ import {
 import type { VirtualModelDefinition } from "../virtual-models.ts";
 import type {
 	AgentBeforeSettleEvent,
+	AssistantMessageTransformer,
 	BeforeAgentStartCustomEvent,
 	BeforeAgentStartEvent,
 	BeforeAgentStartEventResult,
@@ -787,6 +788,12 @@ export class ExtensionRunner {
 			}
 		}
 		return undefined;
+	}
+
+	getAssistantMessageTransformers(): AssistantMessageTransformer[] {
+		return this.extensions.flatMap((ext) =>
+			ext.assistantMessageTransformer ? [ext.assistantMessageTransformer] : [],
+		);
 	}
 
 	getMarkdownTransformers(): MarkdownTransformer[] {

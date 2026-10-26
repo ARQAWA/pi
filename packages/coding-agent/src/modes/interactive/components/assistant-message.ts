@@ -1,6 +1,6 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { Container, Markdown, type MarkdownTheme, MouseRegion, Spacer, Text } from "@earendil-works/pi-tui";
-import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
+import type { AssistantMessageTransformer, MarkdownTransformer } from "../../../core/extensions/types.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { createMarkdownTransform } from "./markdown-transform.ts";
 
@@ -18,6 +18,7 @@ export class AssistantMessageComponent extends Container {
 	private hiddenThinkingLabel: string;
 	private outputPad: number;
 	private markdownTransformers: readonly MarkdownTransformer[];
+	private assistantMessageTransformers: readonly AssistantMessageTransformer[];
 	private lastMessage?: AssistantMessage;
 	private hasToolCalls = false;
 	private isStreaming = false;
@@ -30,6 +31,7 @@ export class AssistantMessageComponent extends Container {
 		hiddenThinkingLabel = "Thinking...",
 		outputPad = 1,
 		markdownTransformers: readonly MarkdownTransformer[] = [],
+		assistantMessageTransformers: readonly AssistantMessageTransformer[] = [],
 	) {
 		super();
 
@@ -38,6 +40,7 @@ export class AssistantMessageComponent extends Container {
 		this.hiddenThinkingLabel = hiddenThinkingLabel;
 		this.outputPad = outputPad;
 		this.markdownTransformers = markdownTransformers;
+		this.assistantMessageTransformers = assistantMessageTransformers;
 
 		// Container for text/thinking content
 		this.contentContainer = new Container();
@@ -91,6 +94,15 @@ export class AssistantMessageComponent extends Container {
 	updateContent(message: AssistantMessage, isStreaming = this.isStreaming): void {
 		this.lastMessage = message;
 		this.isStreaming = isStreaming;
+		message = structuredClone(message);
+
+		for (const transformer of this.assistantMessageTransformers) {
+			try {
+				message = transformer(message);
+			} catch {
+				// Keep the current message and continue with the next transformer.
+			}
+		}
 
 		// Clear content container
 		this.contentContainer.clear();

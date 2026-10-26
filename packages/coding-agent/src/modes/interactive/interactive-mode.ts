@@ -3470,6 +3470,7 @@ export class InteractiveMode {
 						this.hiddenThinkingLabel,
 						this.outputPad,
 						this.getMarkdownTransformers(),
+						this.session.extensionRunner.getAssistantMessageTransformers(),
 					);
 					this.streamingMessage = event.message;
 					this.chatContainer.addChild(this.streamingComponent);
@@ -3943,6 +3944,7 @@ export class InteractiveMode {
 					this.hiddenThinkingLabel,
 					this.outputPad,
 					this.getMarkdownTransformers(),
+					this.session.extensionRunner.getAssistantMessageTransformers(),
 				);
 				this.chatContainer.addChild(assistantComponent);
 				break;

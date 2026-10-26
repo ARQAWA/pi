@@ -20,6 +20,7 @@ import type {
 import type {
 	AnyModel,
 	Api,
+	AssistantMessage,
 	AssistantMessageEvent,
 	AssistantMessageEventStream,
 	ClassifierApi,
@@ -1544,6 +1545,9 @@ export interface MarkdownTransformContext {
 	availableWidth: number;
 }
 
+/** Transform an isolated display copy before Pi computes transcript layout. */
+export type AssistantMessageTransformer = (message: AssistantMessage) => AssistantMessage;
+
 export type MarkdownTransformer = (markdown: string, context: MarkdownTransformContext) => string;
 
 export interface EntryRenderOptions {
@@ -1713,6 +1717,9 @@ export interface ExtensionAPI {
 
 	/** Register a custom renderer for CustomMessageEntry. */
 	registerMessageRenderer<T = unknown>(customType: string, renderer: MessageRenderer<T>): void;
+
+	/** Register a display-only assistant message transformer. Transformers run in extension load order. */
+	registerAssistantMessageTransformer(transformer: AssistantMessageTransformer): void;
 
 	/** Register a transformer for user and assistant Markdown before Pi renders it in the interactive transcript. */
 	registerMarkdownTransformer(transformer: MarkdownTransformer): void;
@@ -2276,6 +2283,7 @@ export interface Extension {
 	tools: Map<string, RegisteredTool>;
 	messageRenderers: Map<string, MessageRenderer>;
 	toolRenderers?: ToolRendererResolver[];
+	assistantMessageTransformer?: AssistantMessageTransformer;
 	markdownTransformer?: MarkdownTransformer;
 	entryRenderers?: Map<string, EntryRenderer>;
 	commands: Map<string, RegisteredCommand>;

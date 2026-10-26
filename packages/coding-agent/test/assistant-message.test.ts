@@ -92,6 +92,55 @@ describe("AssistantMessageComponent", () => {
 		expect(rendered).toContain("answer");
 	});
 
+	test("applies assistant message transformers before calculating layout", () => {
+		initTheme("dark");
+		const message = createAssistantMessage([
+			{ type: "thinking", thinking: "first reasoning" },
+			{ type: "text", text: "answer" },
+			{ type: "thinking", thinking: "second reasoning" },
+		]);
+		const component = new AssistantMessageComponent(
+			message,
+			true,
+			undefined,
+			"Thinking...",
+			1,
+			[],
+			[(message) => ({ ...message, content: message.content.filter((content) => content.type !== "thinking") })],
+		);
+
+		const lines = component.render(80).map((line) => stripAnsi(line));
+		expect(lines).toHaveLength(2);
+		expect(lines[1]).toContain("answer");
+		expect(lines.join("\n")).not.toContain("Thinking...");
+		expect(lines.join("\n")).not.toContain("reasoning");
+		expect(message.content).toHaveLength(3);
+	});
+
+	test("isolates mutating transformers from the original message", () => {
+		initTheme("dark");
+		const message = createAssistantMessage([{ type: "thinking", thinking: "reasoning" }]);
+		const component = new AssistantMessageComponent(
+			message,
+			true,
+			undefined,
+			"Thinking...",
+			1,
+			[],
+			[
+				(message) => {
+					message.content.length = 0;
+					throw new Error("ignored");
+				},
+			],
+		);
+
+		expect(component.render(80)).toEqual([]);
+		component.updateContent(message);
+		expect(component.render(80)).toEqual([]);
+		expect(message.content).toHaveLength(1);
+	});
+
 	test("collapses individual thinking runs when clicked", () => {
 		initTheme("dark");
 		const component = new AssistantMessageComponent(

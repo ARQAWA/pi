@@ -21,6 +21,7 @@ import { createSyntheticSourceInfo, getSyntheticPathSource, isSyntheticPath } fr
 import { time } from "../timings.ts";
 import type { ModelRouteRequest, VirtualModelDefinition } from "../virtual-models.ts";
 import type {
+	AssistantMessageTransformer,
 	EntryRenderer,
 	Extension,
 	ExtensionAPI,
@@ -354,6 +355,11 @@ function createExtensionAPI(
 		registerMessageRenderer<T>(customType: string, renderer: MessageRenderer<T>): void {
 			assertActive();
 			extension.messageRenderers.set(customType, renderer as MessageRenderer);
+		},
+
+		registerAssistantMessageTransformer(transformer: AssistantMessageTransformer): void {
+			assertActive();
+			extension.assistantMessageTransformer = transformer;
 		},
 
 		registerMarkdownTransformer(transformer: MarkdownTransformer): void {
